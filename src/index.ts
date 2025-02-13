@@ -33,18 +33,15 @@ async function getAppsOnPage(page: Page) {
   const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
 
-  // Log in to GitHub
   await page.goto('https://github.com/login');
   await page.type('#login_field', GITHUB_USERNAME);
   await page.type('#password', GITHUB_PASSWORD);
   await page.click('[name="commit"]');
   await page.waitForNavigation();
 
-  // Wait for the user to manually handle 2FA
   console.log('Please complete the 2FA process in the browser.');
   await page.waitForNavigation({ waitUntil: 'networkidle0' });
 
-  // Navigate to GitHub apps page
   let currentPage = 1;
   let hasNextPage = true;
 
@@ -55,15 +52,12 @@ async function getAppsOnPage(page: Page) {
       await page.goto(`https://github.com/settings/apps?page=${currentPage}`);
     }
 
-    // Get the list of apps on the current page
     const apps = await getAppsOnPage(page);
     console.log(apps);
 
-    // Navigate to the edit page of each app
     for (const app of apps) {
       if (app.name.startsWith(APP_PREFIX)) {
         await page.goto(`${app.editLink}/advanced`);
-        // Perform deletion or other actions
         await page.evaluate(() => {
           const buttons = Array.from(document.querySelectorAll('button'));
           const deleteButton = buttons.find(button => button.textContent?.includes('Delete GitHub App'));
@@ -84,7 +78,6 @@ async function getAppsOnPage(page: Page) {
       }
     }
 
-    // Check if there is a next page
     hasNextPage = await page.$('.pagination a.next_page') !== null;
     currentPage++;
   }
